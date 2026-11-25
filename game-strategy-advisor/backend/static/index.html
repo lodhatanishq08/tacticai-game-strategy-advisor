@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TacticAI — Game Strategy Advisor</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f172a;--bg2:#1e293b;--bg3:#334155;--bg4:#253551;
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#64748b;
+  --blue:#3b82f6;--blue2:#2563eb;--blueglow:rgba(59,130,246,0.15);
+  --green:#22c55e;--yellow:#f59e0b;--red:#ef4444;--cyan:#06b6d4;
+  --border:#334155;--border2:#475569;
+}
+html,body{height:100%}
+body{font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;overflow-x:hidden}
+a{color:var(--blue);text-decoration:none}
+button{cursor:pointer;font-family:inherit;border:none;outline:none;transition:all .2s;font-size:14px}
+button:disabled{cursor:not-allowed;opacity:.5}
+input,select,textarea{font-family:inherit;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 14px;font-size:14px;width:100%;outline:none;transition:border .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blueglow)}
+select option{background:var(--bg2)}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.app{display:flex;min-height:100vh}
+#sidebar{width:260px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100;overflow-y:auto}
+#content{margin-left:260px;flex:1;min-height:100vh}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;font-weight:500;cursor:pointer;transition:all .2s}
+.btn-p{background:var(--blue);color:#fff}.btn-p:hover:not(:disabled){background:var(--blue2);box-shadow:0 0 20px var(--blueglow)}
+.btn-s{background:var(--bg3);color:var(--text);border:1px solid var(--border)}.btn-s:hover:not(:disabled){background:var(--border)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-lg{padding:14px 28px;font-size:16px}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:16px}
+.stat-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.stat-v{font-size:26px;font-weight:800;line-height:1}
+.stat-l{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+.ph{background:var(--bg2);border-bottom:1px solid var(--border);padding:20px 32px}
+.pc{padding:24px 32px}
+.spin{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pulse{animation:pu 2s ease infinite}
+@keyframes pu{0%,100%{opacity:1}50%{opacity:.4}}
+.slide{animation:sl .3s ease-out}
+@keyframes sl{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+table{width:100%;border-collapse:collapse}
+th{background:var(--bg3);padding:10px 16px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3)}
+td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px}
+tr:hover td{background:rgba(255,255,255,.02)}
+.nav-link{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;margin-bottom:2px;font-size:14px;color:var(--text2);cursor:pointer;border:none;background:transparent;width:100%;text-align:left;transition:all .15s}
+.nav-link:hover{background:var(--bg3);color:var(--text)}
+.nav-link.active{background:var(--blueglow);color:var(--blue);font-weight:600}
+.demo-banner{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--yellow);display:flex;align-items:center;gap:8px}
+.ai-banner{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--blue);display:flex;align-items:center;gap:8px}
+.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.prog{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:4px}
+.prog-fill{height:100%;border-radius:3px;transition:width .6s}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+.flex{display:flex}.items-c{align-items:center}.jc-b{justify-content:space-between}.gap2{gap:8px}.gap4{gap:16px}.wrap{flex-wrap:wrap}
+.mb4{margin-bottom:16px}.mt4{margin-top:16px}
+.w-full{width:100%}
+.text-muted{color:var(--text2)}
+.font-bold{font-weight:700}
+.sec-title{font-size:17px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.pitch{position:relative;border-radius:8px;overflow:hidden}
+.pplayer{position:absolute;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;border:2px solid rgba(255,255,255,.8);z-index:10;text-align:center;box-shadow:0 0 10px rgba(0,0,0,.5)}
+.weakness-card{padding:12px 16px;border-radius:8px;background:var(--bg2);margin-bottom:8px}
+.tab-btn{padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid var(--border);white-space:nowrap;transition:all .2s}
+.chat-msg{display:flex;margin-bottom:16px}
+.msg-bubble{max-width:70%;border-radius:12px;padding:14px 18px}
+.msg-ai{background:var(--bg2);border:1px solid var(--border);border-radius:16px 16px 16px 4px}
+.msg-user{background:var(--blue);border:1px solid var(--blue);border-radius:16px 16px 4px 16px;color:#fff}
+.avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+#chat-messages{flex:1;overflow-y:auto;padding:24px 32px}
+#chat-input-area{padding:16px 32px;border-top:1px solid var(--border);background:var(--bg2)}
+.suggest-btn{width:100%;text-align:left;padding:10px 12px;border-radius:8px;margin-bottom:6px;background:var(--bg);border:1px solid var(--border);color:var(--text2);font-size:12px;cursor:pointer;line-height:1.4}
+.suggest-btn:hover{border-color:var(--blue);color:var(--text)}
+.section-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px}
+.wz-critical{border-left:3px solid var(--red)}
+.wz-high{border-left:3px solid var(--yellow)}
+.wz-medium{border-left:3px solid var(--cyan)}
+.wz-warning{border-left:3px solid var(--yellow)}
+.wz-danger{border-left:3px solid var(--red)}
+.wz-info{border-left:3px solid var(--cyan)}
+/* SVG chart labels */
+.chart-label{font-family:Inter,sans-serif;font-size:11px;fill:var(--text3)}
+@media(max-width:768px){#sidebar{width:100%;position:relative;min-height:auto;height:auto}.app{flex-direction:column}#content{margin-left:0}.g2,.g3{grid-template-columns:1fr}.ph{padding:16px}.pc{padding:16px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="sidebar">
+    <div style="padding:20px;border-bottom:1px solid var(--border)">
+      <div class="flex items-c gap2" style="margin-bottom:12px">
+        <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:18px">⚽</div>
+        <div>
+          <div style="font-weight:800;font-size:15px">TacticAI</div>
+          <div style="font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase">Strategy Advisor</div>
+        </div>
+      </div>
+      <div id="ai-status" style="padding:8px 12px;border-radius:8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);font-size:11px">
+        <div class="flex items-c gap2">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--yellow);display:inline-block"></span>
+          <span style="color:var(--yellow);font-weight:600">Connecting...</span>
+        </div>
+        <div style="color:var(--text3);margin-top:2px;font-size:10px">Loading system status</div>
+      </div>
+    </div>
+
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border)">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">My Team</div>
+      <select id="team-select" onchange="onTeamChange(this.value)" style="width:100%;font-size:13px"></select>
+    </div>
+
+    <nav style="padding:12px;flex:1">
+      <button class="nav-link active" onclick="showPage('dashboard')" id="nav-dashboard">
+        <span style="font-size:16px;width:20px;text-align:center">⬛</span> Dashboard
+      </button>
+      <button class="nav-link" onclick="showPage('analysis')" id="nav-analysis">
+        <span style="font-size:16px;width:20px;text-align:center">📊</span> Match Analysis
+      </button>
+      <button class="nav-link" onclick="showPage('opponent')" id="nav-opponent">
+        <span style="font-size:16px;width:20px;text-align:center">🔍</span> Opponent Scout
+      </button>
+      <button class="nav-link" onclick="showPage('strategy')" id="nav-strategy">
+        <span style="font-size:16px;width:20px;text-align:center">♟️</span> Strategy
+      </button>
+      <button class="nav-link" onclick="showPage('live')" id="nav-live">
+        <span style="font-size:16px;width:20px;text-align:center">⚡</span> Live Match
+      </button>
+      <button class="nav-link" onclick="showPage('chat')" id="nav-chat">
+        <span style="font-size:16px;width:20px;text-align:center">🤖</span> AI Advisor
+      </button>
+      <button class="nav-link" onclick="showPage('data')" id="nav-data">
+        <span style="font-size:16px;width:20px;text-align:center">📂</span> Data Manager
+      </button>
+    </nav>
+
+    <div style="padding:16px 20px;border-top:1px solid var(--border);font-size:10px;color:var(--text3);line-height:1.8">
+      <div>⚠️ Demo data — simulated stats</div>
+      <div>🏆 Powered by IBM Granite</div>
+      <div>🔧 IBM Cloud Ready</div>
+    </div>
+  </aside>
+
+  <main id="content">
+    <div id="offline-banner" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);margin:16px 32px;padding:12px 16px;border-radius:8px;color:var(--red);font-size:13px">
+      ⚠️ Backend not available. Run: <code>cd backend && python3 server.py</code>
+    </div>
+    <div id="page-content"></div>
+  </main>
+</div>
+
+<script>
+const API = 'http://localhost:3001/api';
+let STATE = {
+  teams: [], selectedTeam: 'team_alpha', selectedOpponent: '',
+  matches: [], formations: {}, status: null,
+  currentPage: 'dashboard'
+};
+
+// ─── API ───────────────────────────────────────────────────────
+async function apiFetch(path, opts={}) {
+  const r = await fetch(API + path, opts);
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+async function apiPost(path, data) {
+  return apiFetch(path, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function el(id) { return document.getElementById(id); }
+function badge(text, color) { return `<span class="badge" style="background:${color}22;color:${color}">${esc(text)}</span>`; }
+function formBadge(r) {
+  const c = r==='W'?'var(--green)':r==='D'?'var(--yellow)':'var(--red)';
+  return `<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:${c}22;color:${c};font-size:12px;font-weight:700">${r}</span>`;
+}
+function confBar(val, label='Confidence') {
+  const pct = Math.round(val*100);
+  const c = pct>=85?'var(--green)':pct>=70?'var(--yellow)':'var(--red)';
+  return `<div><div class="flex jc-b" style="font-size:11px;color:var(--text2);margin-bottom:4px"><span>${esc(label)}</span><span style="color:${c};font-weight:600">${pct}%</span></div><div class="prog"><div class="prog-fill" style="width:${pct}%;background:${c}"></div></div></div>`;
+}
+function statBar(label, hv, av, fmt='') {
+  const tot = (hv+av)||1, hp = (hv/tot)*100;
+  return `<div style="margin-bottom:12px"><div class="flex jc-b" style="font-size:12px;margin-bottom:4px"><span style="color:var(--blue);font-weight:600">${hv}${fmt}</span><span style="color:var(--text3);font-size:11px">${esc(label)}</span><span style="color:#94a3b8;font-weight:600">${av}${fmt}</span></div><div style="height:6px;border-radius:3px;overflow:hidden;background:var(--bg3);display:flex"><div style="width:${hp}%;background:var(--blue)"></div><div style="flex:1;background:#475569"></div></div></div>`;
+}
+function agentPipeline(step, done=false) {
+  const agents = ['Match Analysis','Opponent Scout','Strategy','Explanation'];
+  return agents.map((a,i) => {
+    const ok = done||i<step, cur = !done&&i===step;
+    const bg = ok?'rgba(34,197,94,.15)':cur?'rgba(59,130,246,.15)':'var(--bg3)';
+    const col = ok?'var(--green)':cur?'var(--blue)':'var(--text3)';
+    const icon = ok?'✓':cur?'<span class="spin" style="width:10px;height:10px;border-width:1.5px"></span>':'○';
+    return `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;background:${bg};color:${col};border:1px solid ${cur?'rgba(59,130,246,.3)':'transparent'}">${icon} ${a}</span>`;
+  }).join(`<span style="color:var(--text3);font-size:10px">→</span>`);
+}
+function section(title, icon, body, extra='') {
+  return `<div class="section-wrap">${extra}<div class="sec-title">${icon?`<span>${icon}</span>`:''}${esc(title)}</div>${body}</div>`;
+}
+function infoRow(label, val, color='') {
+  return `<div class="info-row"><span style="color:var(--text3)">${esc(label)}</span><span style="font-weight:600${color?';color:'+color:''}">${val}</span></div>`;
+}
+
+// ─── PITCH DIAGRAM ─────────────────────────────────────────────
+function pitchHTML(formationData, teamColor='#3b82f6', size='md') {
+  if (!formationData?.positions) return '<div style="text-align:center;color:var(--text3);padding:40px">No formation data</div>';
+  const heights = {sm:200, md:300, lg:420};
+  const h = heights[size]||300, w = Math.round(h*0.65);
+  const lines = `
+    <circle cx="${w/2}" cy="${h/2}" r="${h*0.1}" stroke="rgba(255,255,255,.3)" stroke-width="1.5" fill="none"/>
+    <circle cx="${w/2}" cy="${h/2}" r="3" fill="rgba(255,255,255,.3)"/>
+    <line x1="0" y1="${h/2}" x2="${w}" y2="${h/2}" stroke="rgba(255,255,255,.3)" stroke-width="1.5"/>
+    <rect x="${w*0.2}" y="${h*0.02}" width="${w*0.6}" height="${h*0.18}" stroke="rgba(255,255,255,.3)" stroke-width="1.5" fill="none"/>
+    <rect x="${w*0.2}" y="${h*0.8}" width="${w*0.6}" height="${h*0.18}" stroke="rgba(255,255,255,.3)" stroke-width="1.5" fill="none"/>
+    <rect x="${w*0.38}" y="-2" width="${w*0.24}" height="${h*0.03}" stroke="rgba(255,255,255,.5)" stroke-width="1.5" fill="rgba(255,255,255,.1)"/>
+    <rect x="${w*0.38}" y="${h*0.97}" width="${w*0.24}" height="${h*0.03}" stroke="rgba(255,255,255,.5)" stroke-width="1.5" fill="rgba(255,255,255,.1)"/>
+  `;
+  const players = formationData.positions.map(p => {
+    const x = (p.x/100)*w, y = (p.y/100)*h;
+    const sz = size==='sm'?28:34;
+    return `<div class="pplayer" style="left:${x}px;top:${y}px;width:${sz}px;height:${sz}px;background:${teamColor};font-size:${size==='sm'?8:9}px" title="${esc(p.role)}">${esc(p.label)}</div>`;
+  }).join('');
+  return `<div class="pitch" style="width:${w}px;height:${h}px;margin:0 auto;background:linear-gradient(180deg,#166534 0%,#15803d 50%,#166534 100%);border:2px solid #fff;position:relative">
+    <svg style="position:absolute;inset:0;pointer-events:none" viewBox="0 0 ${w} ${h}">${lines}</svg>
+    ${players}
+  </div>`;
+}
+
+// ─── SIMPLE SVG CHARTS ─────────────────────────────────────────
+function lineChart(data, keys, colors, w=400, h=160) {
+  if (!data.length) return '';
+  const pad = {t:10,r:20,b:30,l:35};
+  const cw = w-pad.l-pad.r, ch = h-pad.t-pad.b;
+  const allVals = data.flatMap(d => keys.map(k => Number(d[k])||0));
+  const maxV = Math.max(...allVals, 1);
+  const xStep = cw/(data.length-1||1);
+  
+  const lines = keys.map((k,ki) => {
+    const pts = data.map((d,i) => `${pad.l+i*xStep},${pad.t+ch-(((Number(d[k])||0)/maxV)*ch)}`).join(' ');
+    return `<polyline points="${pts}" fill="none" stroke="${colors[ki]}" stroke-width="2"/>
+      ${data.map((d,i) => `<circle cx="${pad.l+i*xStep}" cy="${pad.t+ch-(((Number(d[k])||0)/maxV)*ch)}" r="3" fill="${colors[ki]}"/>`).join('')}`;
+  }).join('');
+
+  const xLabels = data.map((d,i) => `<text x="${pad.l+i*xStep}" y="${h-5}" class="chart-label" text-anchor="middle">${esc(d.date||d.label||i)}</text>`).join('');
+  const yLines = [0,.5,1].map(v => `<line x1="${pad.l}" y1="${pad.t+ch*(1-v)}" x2="${pad.l+cw}" y2="${pad.t+ch*(1-v)}" stroke="var(--border)" stroke-width="1"/><text x="${pad.l-4}" y="${pad.t+ch*(1-v)+4}" class="chart-label" text-anchor="end">${Math.round(maxV*v)}</text>`).join('');
+  const legend = keys.map((k,i) => `<rect x="${10+i*120}" y="${h-10}" width="12" height="8" fill="${colors[i]}" rx="2"/><text x="${26+i*120}" y="${h-3}" class="chart-label">${k}</text>`).join('');
+
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h}px;overflow:visible">${yLines}${lines}${xLabels}${legend}</svg>`;
+}
+
+function barChart(data, key, color, w=400, h=160) {
+  if (!data.length) return '';
+  const pad = {t:10,r:10,b:30,l:35};
+  const cw = w-pad.l-pad.r, ch = h-pad.t-pad.b;
+  const maxV = Math.max(...data.map(d=>Number(d[key])||0), 1);
+  const bw = Math.max(cw/data.length-4, 4);
+  const bars = data.map((d,i) => {
+    const bh = ((Number(d[key])||0)/maxV)*ch;
+    const x = pad.l+i*(cw/data.length)+((cw/data.length)-bw)/2;
+    return `<rect x="${x}" y="${pad.t+ch-bh}" width="${bw}" height="${bh}" fill="${color}" rx="3" opacity=".85"/>
+      <text x="${x+bw/2}" y="${h-5}" class="chart-label" text-anchor="middle">${esc(d.label||d.formation||d.date||i)}</text>`;
+  }).join('');
+  const yLines = [0,.5,1].map(v => `<line x1="${pad.l}" y1="${pad.t+ch*(1-v)}" x2="${pad.l+cw}" y2="${pad.t+ch*(1-v)}" stroke="var(--border)" stroke-width="1"/><text x="${pad.l-4}" y="${pad.t+ch*(1-v)+4}" class="chart-label" text-anchor="end">${Math.round(maxV*v)}</text>`).join('');
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h}px;overflow:visible">${yLines}${bars}</svg>`;
+}
+
+function radarChart(data, w=240, h=200) {
+  if (!data.length) return '';
+  const cx=w/2, cy=h/2, r=Math.min(w,h)*0.38;
+  const n = data.length;
+  const pts = data.map((_,i) => { const a=(i/n)*2*Math.PI-Math.PI/2; return {x:cx+r*Math.cos(a),y:cy+r*Math.sin(a)}; });
+  const lines = pts.map((p,i) => `<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="var(--border)" stroke-width="1"/>`).join('');
+  const webPts = [.25,.5,.75,1].map(s => pts.map(p => `${cx+(p.x-cx)*s},${cy+(p.y-cy)*s}`).join(' ')).map(ps => `<polygon points="${ps}" fill="none" stroke="var(--border)" stroke-width="1"/>`).join('');
+  const dataPts = data.map((d,i) => { const v=(d.value||0)/100; const p=pts[i]; return `${cx+(p.x-cx)*v},${cy+(p.y-cy)*v}`; }).join(' ');
+  const labels = data.map((d,i) => {
+    const a=(i/n)*2*Math.PI-Math.PI/2, lx=cx+(r+18)*Math.cos(a), ly=cy+(r+18)*Math.sin(a);
+    const anchor = Math.abs(Math.cos(a))<.1?'middle':Math.cos(a)>0?'start':'end';
+    return `<text x="${lx}" y="${ly+4}" style="font-size:10px;fill:var(--text2);font-family:Inter,sans-serif" text-anchor="${anchor}">${esc(d.metric)}</text>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h}px">
+    ${webPts}${lines}
+    <polygon points="${dataPts}" fill="rgba(59,130,246,.2)" stroke="var(--blue)" stroke-width="2"/>
+    ${data.map((d,i)=>{ const v=(d.value||0)/100,p=pts[i]; return `<circle cx="${cx+(p.x-cx)*v}" cy="${cy+(p.y-cy)*v}" r="3" fill="var(--blue)"/>`; }).join('')}
+    ${labels}
+  </svg>`;
+}
+
+// ─── PAGE: DASHBOARD ──────────────────────────────────────────
+async function renderDashboard() {
+  const page = el('page-content');
+  page.innerHTML = `<div class="ph"><div class="flex jc-b items-c"><div><div class="spin"></div> Loading team data...</div></div></div>`;
+  
+  const [teamData, matchData] = await Promise.all([
+    apiFetch(`/teams/${STATE.selectedTeam}`),
+    apiFetch(`/matches?teamId=${STATE.selectedTeam}`)
+  ]);
+  const team = teamData.team;
+  const matches = matchData.matches || [];
+
+  const trend = [...matches].slice(0,8).reverse().map(m => ({
+    date: (m.date||'').slice(5),
+    goalsFor: m.homeTeam===STATE.selectedTeam ? m.homeScore : m.awayScore,
+    goalsAgainst: m.homeTeam===STATE.selectedTeam ? m.awayScore : m.homeScore,
+    possession: m.homeTeam===STATE.selectedTeam ? m.homePossession : m.awayPossession,
+    shots: m.homeTeam===STATE.selectedTeam ? m.homeShots : m.awayShots
+  }));
+
+  const radarData = [
+    {metric:'Attack', value:Math.min(100,Math.round((team.stats.goalsScored/50)*100))},
+    {metric:'Defense', value:Math.min(100,Math.round(((50-team.stats.goalsConceded)/50)*100))},
+    {metric:'Possession', value:team.stats.possession},
+    {metric:'Passing', value:team.stats.passAccuracy},
+    {metric:'Pressing', value:Math.min(100,Math.round((team.stats.tacklesPerGame/25)*100))},
+    {metric:'Accuracy', value:Math.min(100,Math.round((team.stats.shotsOnTarget/team.stats.shotsPerGame)*100))}
+  ];
+
+  const statsHTML = [
+    {l:'Wins',v:team.stats.wins,c:'var(--green)'},{l:'Draws',v:team.stats.draws,c:'var(--yellow)'},
+    {l:'Losses',v:team.stats.losses,c:'var(--red)'},{l:'Goals Scored',v:team.stats.goalsScored,c:'var(--blue)'},
+    {l:'Goals Conceded',v:team.stats.goalsConceded,c:'var(--text2)'},{l:'Possession %',v:team.stats.possession+'%',c:'var(--cyan)'},
+    {l:'Pass Accuracy',v:team.stats.passAccuracy+'%',c:'var(--blue)'},{l:'Shots/Game',v:team.stats.shotsPerGame,c:'var(--yellow)'}
+  ].map(s=>`<div class="stat-box"><div class="stat-v" style="color:${s.c}">${esc(s.v)}</div><div class="stat-l">${esc(s.l)}</div></div>`).join('');
+
+  const playersHTML = (team.players||[]).sort((a,b)=>b.rating-a.rating).map(p => {
+    const c = p.rating>=8.3?'var(--green)':p.rating>=7.8?'var(--yellow)':'var(--text2)';
+    const statusLabel = p.rating>=8.3?'Key Player':p.rating>=7.8?'Good Form':'Average';
+    const statusColor = p.rating>=8.3?'var(--green)':p.rating>=7.8?'var(--yellow)':'var(--text3)';
+    return `<tr><td style="font-weight:500">${esc(p.name)}</td><td>${badge(p.position,'var(--text3)')}</td><td style="font-weight:700;color:${c}">${p.rating}</td><td>${p.goals}</td><td>${p.assists}</td><td>${badge(statusLabel,statusColor)}</td></tr>`;
+  }).join('');
+
+  page.innerHTML = `
+    <div class="ph">
+      <div class="flex jc-b items-c">
+        <div>
+          <h1 style="font-size:22px;font-weight:800;margin:0"><span style="color:${team.color}">●</span> ${esc(team.name)}</h1>
+          <div style="color:var(--text3);font-size:13px;margin-top:2px">${esc(team.league)} · ${esc(team.manager)} · ${esc(team.formation)}</div>
+        </div>
+        <div class="flex gap2 items-c wrap">
+          <div class="demo-banner">⚠️ Demo Data</div>
+          <button class="btn btn-p" onclick="runTeamAnalysis()"><span id="analyze-spin" style="display:none" class="spin"></span> 🤖 AI Analyze</button>
+        </div>
+      </div>
+    </div>
+    <div class="pc">
+      <div class="stat-grid mb4">${statsHTML}</div>
+      <div class="g2">
+        <div class="section-wrap">
+          <div class="sec-title">📈 Recent Form</div>
+          <div class="flex gap2 mb4">${(team.stats.form||[]).map(r=>formBadge(r)).join('')}</div>
+          ${lineChart(trend, ['goalsFor','goalsAgainst'], ['var(--green)','var(--red)'])}
+        </div>
+        <div class="section-wrap">
+          <div class="sec-title">🎯 Performance Radar</div>
+          ${radarChart(radarData)}
+        </div>
+      </div>
+      <div class="section-wrap">
+        <div class="sec-title">📊 Match Trends</div>
+        ${lineChart(trend, ['possession','shots'], ['var(--blue)','var(--yellow)'])}
+      </div>
+      <div id="ai-analysis-result"></div>
+      <div class="section-wrap">
+        <div class="sec-title">👤 Player Performance</div>
+        <div style="overflow-x:auto"><table><thead><tr><th>Player</th><th>Pos</th><th>Rating</th><th>Goals</th><th>Assists</th><th>Status</th></tr></thead><tbody>${playersHTML}</tbody></table></div>
+      </div>
+      <div class="g3">
+        ${[{p:'analysis',i:'📊',l:'Match Analysis',d:'Historical patterns'},{p:'strategy',i:'♟️',l:'Get Strategy',d:'AI game plan'},{p:'live',i:'⚡',l:'Live Advisor',d:'Real-time guidance'}].map(x=>`<div class="card" style="cursor:pointer;padding:20px" onclick="showPage('${x.p}')"><div style="font-size:28px;margin-bottom:8px">${x.i}</div><div style="font-weight:600;margin-bottom:4px">${x.l}</div><div style="font-size:12px;color:var(--text3)">${x.d}</div></div>`).join('')}
+      </div>
+    </div>`;
+}
+
+async function runTeamAnalysis() {
+  const spin = el('analyze-spin');
+  spin.style.display='inline-block';
+  try {
+    const r = await apiPost('/analyze/team', {teamId: STATE.selectedTeam});
+    el('ai-analysis-result').innerHTML = `<div class="section-wrap"><div class="sec-title">🤖 AI Analysis Results</div>
+      <div class="ai-banner mb4">🤖 ${esc(r.analysis?.dataSource==='ibm_granite'?'IBM Granite':'AI Engine')} · ${r.ragDocuments||0} RAG docs retrieved</div>
+      <div style="background:var(--bg);border-radius:8px;padding:16px;border-left:3px solid var(--blue);margin-bottom:16px"><p style="margin:0;font-size:13px;color:var(--text2);line-height:1.7">${esc(r.analysis?.text||'')}</p></div>
+      ${confBar(r.analysis?.confidence||0.8)}</div>`;
+  } catch(e) { el('ai-analysis-result').innerHTML = `<div class="demo-banner">Error: ${esc(e.message)}</div>`; }
+  spin.style.display='none';
+}
+
+// ─── PAGE: MATCH ANALYSIS ─────────────────────────────────────
+async function renderAnalysis() {
+  const page = el('page-content');
+  page.innerHTML = `<div class="ph"><div class="flex jc-b items-c"><div><h1 style="font-size:22px;font-weight:800;margin:0">Match Analysis</h1><div style="color:var(--text3);font-size:13px;margin-top:2px">Historical match performance</div></div><button class="btn btn-p" onclick="runMatchAgent()">🤖 Run Match Analysis Agent</button></div><div id="pipeline-bar" style="margin-top:12px;display:none"></div></div>
+  <div class="pc">
+    <div style="display:grid;grid-template-columns:320px 1fr;gap:24px">
+      <div id="match-list"></div>
+      <div id="match-detail"></div>
+    </div>
+    <div id="match-agent-result"></div>
+  </div>`;
+
+  const matchData = await apiFetch(`/matches?teamId=${STATE.selectedTeam}`);
+  const matches = matchData.matches || [];
+  
+  let selectedId = matches[0]?.id;
+  
+  function getResult(m) {
+    const h = m.homeTeam===STATE.selectedTeam;
+    const my = h?m.homeScore:m.awayScore, opp = h?m.awayScore:m.homeScore;
+    return my>opp?'W':my===opp?'D':'L';
+  }
+  function getOppName(m) {
+    const id = m.homeTeam===STATE.selectedTeam?m.awayTeam:m.homeTeam;
+    return STATE.teams.find(t=>t.id===id)?.name||id;
+  }
+  
+  function renderMatchList() {
+    el('match-list').innerHTML = `<div class="section-wrap"><div class="sec-title">📋 Match History</div>
+      ${matches.map(m => `<div onclick="selectMatch('${m.id}')" style="padding:12px;border-radius:8px;margin-bottom:8px;cursor:pointer;background:${selectedId===m.id?'var(--blueglow)':'var(--bg)'};border:1px solid ${selectedId===m.id?'var(--blue)':'var(--border)'};transition:all .15s">
+        <div class="flex jc-b items-c">
+          <div><div style="font-weight:600;font-size:13px">${m.homeTeam===STATE.selectedTeam?'vs':'@'} ${esc(getOppName(m))}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${esc(m.date)} · ${esc(m.competition)}</div></div>
+          <div class="flex items-c gap2"><span style="font-size:15px;font-weight:700;font-family:monospace">${m.homeTeam===STATE.selectedTeam?m.homeScore:m.awayScore}–${m.homeTeam===STATE.selectedTeam?m.awayScore:m.homeScore}</span>${formBadge(getResult(m))}</div>
+        </div>
+        <div style="margin-top:6px;font-size:11px;color:var(--text3);display:flex;gap:12px"><span>Poss: ${m.homeTeam===STATE.selectedTeam?m.homePossession:m.awayPossession}%</span><span>xG: ${m.homeTeam===STATE.selectedTeam?m.xG?.home:m.xG?.away}</span></div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  window.selectMatch = async function(id) {
+    selectedId = id;
+    renderMatchList();
+    const r = await apiFetch(`/matches/${id}`);
+    const m = r.match;
+    const hn = m.homeTeamData?.name||m.homeTeam, an = m.awayTeamData?.name||m.awayTeam;
+    el('match-detail').innerHTML = `
+      <div class="section-wrap mb4">
+        <div class="sec-title">📊 Match Statistics</div>
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">${esc(hn)} (${esc(m.homeFormation)}) vs ${esc(an)} (${esc(m.awayFormation)})</div>
+          <span style="font-size:36px;font-weight:900;font-family:monospace;letter-spacing:8px">${m.homeScore} – ${m.awayScore}</span>
+          <div style="font-size:12px;color:var(--text3);margin-top:4px">xG: ${m.xG?.home||0} – ${m.xG?.away||0}</div>
+        </div>
+        ${statBar('Possession',m.homePossession,m.awayPossession,'%')}
+        ${statBar('Shots',m.homeShots,m.awayShots)}
+        ${statBar('Shots on Target',m.homeShotsOnTarget,m.awayShotsOnTarget)}
+        ${statBar('Pass Accuracy',m.homePassAccuracy,m.awayPassAccuracy,'%')}
+        ${statBar('Tackles',m.homeTackles,m.awayTackles)}
+        ${statBar('Corners',m.homeCorners,m.awayCorners)}
+      </div>
+      ${(m.goals?.length>0)?`<div class="section-wrap mb4"><div class="sec-title">⚽ Goal Timeline</div>
+        ${m.goals.map(g=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;margin-bottom:6px;background:var(--bg);border-left:3px solid ${g.team===STATE.selectedTeam?'var(--green)':'var(--red)'}">
+          <span style="font-weight:700;color:var(--blue);min-width:36px;font-family:monospace">${g.minute}'</span>
+          <span>⚽</span>
+          <div><span style="font-weight:600">${esc(g.scorer)}</span>${g.assist?`<span style="color:var(--text3);font-size:12px"> (${esc(g.assist)})</span>`:''}</div>
+          ${badge(g.type?.replace(/_/g,' '),g.team===STATE.selectedTeam?'var(--green)':'var(--red)')}
+        </div>`).join('')}
+      </div>`:''}
+      ${(m.keyMoments?.length>0)?`<div class="section-wrap"><div class="sec-title">🔑 Key Moments</div>
+        ${m.keyMoments.map((km,i)=>`<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px"><span style="color:var(--blue);min-width:20px">${i+1}.</span><span style="color:var(--text2)">${esc(km)}</span></div>`).join('')}
+      </div>`:''}`;
+  };
+
+  renderMatchList();
+  if (matches[0]) window.selectMatch(matches[0].id);
+
+  window.runMatchAgent = async function() {
+    const pb = el('pipeline-bar');
+    pb.style.display='block';
+    pb.innerHTML = agentPipeline(0);
+    try {
+      const r = await apiPost('/analyze/team', {teamId: STATE.selectedTeam});
+      pb.innerHTML = agentPipeline(4, true);
+      const fh = (r.formationHistory||[]).map(f=>({label:f.formation, count:f.count}));
+      el('match-agent-result').innerHTML = `<div class="section-wrap mt4"><div class="sec-title">🤖 Match Analysis Agent Results</div>
+        <div class="ai-banner mb4">Source: ${esc(r.analysis?.dataSource)} · RAG: ${r.ragDocuments||0} docs</div>
+        <div style="background:var(--bg);padding:16px;border-radius:8px;border-left:3px solid var(--blue);margin-bottom:16px"><p style="margin:0;font-size:13px;color:var(--text2);line-height:1.7">${esc(r.analysis?.text||'')}</p></div>
+        <div class="g2">
+          ${fh.length?`<div><div style="font-weight:600;margin-bottom:12px;font-size:14px">Formation Usage</div>${barChart(fh,'count','var(--blue)')}</div>`:''}
+          <div>${confBar(r.analysis?.confidence||0.8,'Analysis Confidence')}
+            <div style="margin-top:16px;font-weight:600;margin-bottom:8px;font-size:13px">Top Performers</div>
+            ${(r.playerInsights||[]).slice(0,4).map(p=>`<div class="flex jc-b" style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px"><span>${esc(p.name)} <span style="color:var(--text3)">(${esc(p.position)})</span></span><span style="font-weight:700;color:${p.isKeyPlayer?'var(--green)':'var(--yellow)'}">${p.rating} ⭐</span></div>`).join('')}
+          </div>
+        </div>
+      </div>`;
+    } catch(e) { pb.innerHTML = `<span style="color:var(--red)">Error: ${esc(e.message)}</span>`; }
+  };
+}
+
+// ─── PAGE: OPPONENT ───────────────────────────────────────────
+async function renderOpponent() {
+  const opponents = STATE.teams.filter(t=>t.id!==STATE.selectedTeam);
+  if (!STATE.selectedOpponent) STATE.selectedOpponent = opponents[0]?.id||'';
+  
+  el('page-content').innerHTML = `
+    <div class="ph">
+      <div class="flex jc-b items-c wrap gap2">
+        <div><h1 style="font-size:22px;font-weight:800;margin:0">Opponent Scout</h1><div style="color:var(--text3);font-size:13px;margin-top:2px">Tactical intelligence on your opponent</div></div>
+        <div class="flex gap2">
+          <select id="opp-select" onchange="STATE.selectedOpponent=this.value" style="min-width:180px;width:auto">${opponents.map(t=>`<option value="${t.id}" ${t.id===STATE.selectedOpponent?'selected':''}>${esc(t.name)}</option>`).join('')}</select>
+          <button class="btn btn-p" onclick="runOpponentAgent()">🔍 Scout Opponent</button>
+        </div>
+      </div>
+      <div id="opp-pipeline" style="margin-top:12px;display:none"></div>
+    </div>
+    <div class="pc" id="opp-content">
+      <div style="text-align:center;padding:64px">
+        <div style="font-size:64px;margin-bottom:16px">🔍</div>
+        <div style="font-weight:700;font-size:18px;margin-bottom:8px">Scout Your Opponent</div>
+        <div style="color:var(--text3);margin-bottom:24px">Run the Opponent Strategy Agent to get detailed tactical intelligence</div>
+        <button class="btn btn-p btn-lg" onclick="runOpponentAgent()">🔍 Start Opponent Analysis</button>
+      </div>
+    </div>`;
+
+  window.runOpponentAgent = async function() {
+    const pb = el('opp-pipeline');
+    pb.style.display = 'block';
+    pb.innerHTML = agentPipeline(1);
+    el('opp-content').innerHTML = `<div style="text-align:center;padding:64px"><span class="spin" style="width:48px;height:48px;border-width:4px"></span><div style="margin-top:24px;font-size:16px;font-weight:600">Analyzing opponent...</div></div>`;
+    
+    const oppId = el('opp-select')?.value || STATE.selectedOpponent;
+    try {
+      const r = await apiPost('/analyze/opponent', {opponentId: oppId});
+      pb.innerHTML = agentPipeline(4, true);
+      const opp = STATE.teams.find(t=>t.id===oppId)||{};
+      
+      el('opp-content').innerHTML = `
+        <div class="g3">
+          <div class="section-wrap">
+            <div class="sec-title">🏆 Opponent Profile</div>
+            <div class="flex items-c gap2 mb4" style="margin-bottom:16px">
+              <div style="width:48px;height:48px;border-radius:50%;background:${opp.color||'#dc2626'};display:flex;align-items:center;justify-content:center;font-size:20px">⚽</div>
+              <div><div style="font-weight:700;font-size:15px">${esc(opp.name||oppId)}</div><div style="font-size:12px;color:var(--text3)">${esc(opp.manager||'')}</div></div>
+            </div>
+            ${infoRow('Formation', r.formations?.primary||'-')}
+            ${infoRow('Alt Formation', r.formations?.secondary||'-')}
+            ${infoRow('Attack Style', (r.tactics?.attackStyle||'').replace(/_/g,' '), 'var(--yellow)')}
+            ${infoRow('Defense Style', (r.tactics?.defendingStyle||'').replace(/_/g,' '), 'var(--cyan)')}
+            <div style="margin-top:12px;display:flex;gap:4px">${(r.recentForm||[]).map(f=>formBadge(f.result)).join('')}</div>
+          </div>
+          <div class="section-wrap">
+            <div class="sec-title">🎯 Tactical Profile</div>
+            ${radarChart([
+              {metric:'Press', value:r.tactics?.defendingStyle==='high_press'?90:r.tactics?.defendingStyle==='mid_block'?60:40},
+              {metric:'Counter', value:r.tactics?.attackStyle==='counter_attack'?90:50},
+              {metric:'Possession', value:opp.stats?.possession||50},
+              {metric:'Set Pieces', value:(r.tactics?.strengths||[]).includes('set_piece_threat')?85:55},
+              {metric:'Physical', value:(r.tactics?.strengths||[]).includes('physical_midfield')?85:60},
+              {metric:'Width', value:(r.tactics?.weaknesses||[]).includes('limited_width')?30:70}
+            ], 240, 190)}
+          </div>
+          <div class="section-wrap">
+            <div class="sec-title">📐 Preferred Formation</div>
+            ${STATE.formations&&r.formations?.primary&&STATE.formations[r.formations.primary]?pitchHTML(STATE.formations[r.formations.primary],opp.color||'#dc2626','sm'):'<div style="text-align:center;color:var(--text3);padding:40px">No formation data</div>'}
+            <div style="text-align:center;margin-top:8px;font-size:12px;color:var(--text3)">${esc(r.formations?.primary||'')}</div>
+          </div>
+        </div>
+
+        <div class="g2">
+          <div class="section-wrap">
+            <div class="sec-title">⚠️ Exploitable Weaknesses</div>
+            <div class="ai-banner mb4">🎯 Target in your attacking strategy</div>
+            ${(r.weaknessMap||[]).map(w=>`<div class="weakness-card wz-${w.severity}" style="margin-bottom:8px"><div class="flex jc-b items-c"><span style="font-weight:600;font-size:13px">${esc(w.label||'')}</span>${badge(w.severity||'',w.severity==='critical'?'var(--red)':w.severity==='high'?'var(--yellow)':'var(--cyan)')}</div>${w.howToExploit?`<div style="font-size:12px;color:var(--text2);margin-top:4px">→ ${esc(w.howToExploit)}</div>`:''}</div>`).join('')}
+          </div>
+          <div class="section-wrap">
+            <div class="sec-title">🛡️ Strengths to Neutralize</div>
+            <div class="demo-banner mb4">⚠️ These require defensive attention</div>
+            ${(r.strengthMap||[]).map(s=>`<div class="weakness-card wz-${s.severity}" style="margin-bottom:8px"><div class="flex jc-b items-c"><span style="font-weight:600;font-size:13px">${esc(s.label||'')}</span>${badge(s.severity||'',s.severity==='danger'?'var(--red)':'var(--yellow)')}</div>${s.howToCounter?`<div style="font-size:12px;color:var(--text2);margin-top:4px">🛡 ${esc(s.howToCounter)}</div>`:''}</div>`).join('')}
+          </div>
+        </div>
+
+        ${(r.playerThreats?.length>0)?`<div class="section-wrap"><div class="sec-title">⚡ Player Threat Analysis</div>
+          <div style="overflow-x:auto"><table><thead><tr><th>Player</th><th>Pos</th><th>Rating</th><th>Goals</th><th>Assists</th><th>Threat</th><th>Counter Tactic</th></tr></thead><tbody>
+            ${r.playerThreats.map(p=>`<tr><td style="font-weight:600">${esc(p.name)}</td><td>${badge(p.position,'var(--text3)')}</td><td style="font-weight:700;color:${p.rating>=8.3?'var(--red)':'var(--yellow)'}">${p.rating}</td><td>${p.goals}</td><td>${p.assists}</td><td>${badge(p.threatLevel||'',p.threatLevel==='critical'?'var(--red)':'var(--yellow)')}</td><td style="font-size:12px;color:var(--text3)">${esc(p.tacticToNeutralize||'')}</td></tr>`).join('')}
+          </tbody></table></div></div>`:''}
+
+        ${(r.vulnerableZones?.length>0)?`<div class="section-wrap"><div class="sec-title">🗺️ Vulnerable Pitch Zones</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+            ${r.vulnerableZones.map(z=>`<div style="padding:12px 16px;border-radius:8px;background:var(--bg);border-left:3px solid ${z.threat==='critical'?'var(--red)':'var(--yellow)'}"><div style="font-weight:600;font-size:13px">${esc(z.zone)}</div><div style="font-size:12px;color:var(--text3);margin-top:4px">${esc(z.description)}</div>${badge(z.threat+' priority',z.threat==='critical'?'var(--red)':'var(--yellow)')}</div>`).join('')}
+          </div></div>`:''}
+
+        <div class="section-wrap"><div class="sec-title">🤖 AI Scout Report</div>
+          <div class="ai-banner mb4">Source: ${esc(r.analysis?.dataSource||'')} · ${(r.ragContext||[]).length} RAG docs</div>
+          <div style="background:var(--bg);padding:16px;border-radius:8px;border-left:3px solid var(--blue);margin-bottom:12px"><p style="margin:0;font-size:13px;color:var(--text2);line-height:1.7">${esc(r.analysis?.text||'')}</p></div>
+          ${confBar(r.analysis?.confidence||0.8)}
+        </div>`;
+    } catch(e) {
+      pb.innerHTML = '';
+      el('opp-content').innerHTML = `<div class="demo-banner">Error: ${esc(e.message)}</div>`;
+    }
+  };
+}
+
+// ─── PAGE: STRATEGY ───────────────────────────────────────────
+async function renderStrategy() {
+  const opponents = STATE.teams.filter(t=>t.id!==STATE.selectedTeam);
+  if (!STATE.selectedOpponent) STATE.selectedOpponent = opponents[0]?.id||'';
+  const team = STATE.teams.find(t=>t.id===STATE.selectedTeam)||{};
+  const opp = STATE.teams.find(t=>t.id===STATE.selectedOpponent)||{};
+
+  el('page-content').innerHTML = `
+    <div class="ph">
+      <div class="flex jc-b items-c wrap gap2">
+        <div><h1 style="font-size:22px;font-weight:800;margin:0">Strategy Advisor</h1><div style="color:var(--text3);font-size:13px;margin-top:2px">AI-powered tactical game plan generation</div></div>
+        <div class="flex gap2">
+          <select id="strat-opp-select" style="min-width:180px;width:auto">${opponents.map(t=>`<option value="${t.id}" ${t.id===STATE.selectedOpponent?'selected':''}>${esc(t.name)}</option>`).join('')}</select>
+          <button class="btn btn-p btn-lg" onclick="runFullStrategy()">♟️ Generate Game Plan</button>
+        </div>
+      </div>
+      <div id="strat-pipeline" style="margin-top:12px;display:none"></div>
+    </div>
+    <div class="pc">
+      <div id="strat-intro" style="text-align:center;padding:64px">
+        <div style="font-size:64px;margin-bottom:16px">♟️</div>
+        <div style="font-weight:700;font-size:20px;margin-bottom:8px">Generate Your Game Plan</div>
+        <div style="color:var(--text3);margin-bottom:8px">${esc(team.name)} vs ${esc(opp.name)}</div>
+        <div style="color:var(--text3);font-size:13px;max-width:500px;margin:0 auto 32px">The AI runs all 4 agents: Match Analysis → Opponent Scout → Strategy → Coaching Instructions</div>
+        <button class="btn btn-p btn-lg" onclick="runFullStrategy()">♟️ Generate Full Game Plan</button>
+      </div>
+      <div id="strat-content" style="display:none"></div>
+    </div>`;
+
+  window.runFullStrategy = async function() {
+    const oppId = el('strat-opp-select')?.value || STATE.selectedOpponent;
+    const pb = el('strat-pipeline');
+    pb.style.display='block'; pb.innerHTML=agentPipeline(1);
+    el('strat-intro').style.display='none';
+    el('strat-content').style.display='block';
+    el('strat-content').innerHTML=`<div style="text-align:center;padding:64px"><span class="spin" style="width:48px;height:48px;border-width:4px"></span><div style="margin-top:24px;font-size:16px;font-weight:600">AI Agents Running...</div><div style="color:var(--text3);font-size:13px;margin-top:8px">Analyzing opponent patterns and generating optimal strategy</div></div>`;
+    
+    try {
+      const r = await apiPost('/analyze', {teamId:STATE.selectedTeam, opponentId:oppId});
+      pb.innerHTML = agentPipeline(4, true);
+      const rec = r.agents?.strategyRecommendation?.recommendation;
+      const exp = r.agents?.insightExplanation;
+      const sum = r.summary;
+      const teamData = STATE.teams.find(t=>t.id===STATE.selectedTeam)||{};
+
+      el('strat-content').innerHTML = `
+        <div class="ai-banner mb4">🤖 Strategy by ${esc(r.aiBackend||'')} · ${(r.agents?.strategyRecommendation?.supportingEvidence||[]).length} RAG docs${!r.graniteConnected?` <span style="color:var(--yellow);margin-left:12px">⚠️ Using local reasoning engine</span>`:''}</div>
+
+        <!-- Tabs -->
+        <div class="flex gap2 mb4" style="overflow-x:auto;padding-bottom:4px">
+          ${['overview','attacking','defending','players','alternatives','coaching'].map((t,i)=>`<button class="tab-btn" id="tab-${t}" onclick="stratTab('${t}')" style="${i===0?'background:var(--blue);color:#fff;border-color:var(--blue)':''}">${t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('')}
+        </div>
+
+        <div id="tab-content-overview">
+          <div class="g3">
+            <div class="section-wrap">
+              <div class="sec-title">📐 Recommended Formation</div>
+              <div style="text-align:center;font-size:24px;font-weight:900;color:var(--blue);margin-bottom:12px">${esc(rec?.formation||'')}</div>
+              ${STATE.formations&&rec?.formation&&STATE.formations[rec.formation]?pitchHTML(STATE.formations[rec.formation],teamData.color||'#3b82f6','sm'):''}
+            </div>
+            <div class="section-wrap">
+              <div class="sec-title">🔄 Alternative Formation</div>
+              <div style="text-align:center;font-size:24px;font-weight:900;color:var(--text2);margin-bottom:12px">${esc(rec?.alternativeFormation||'')}</div>
+              ${STATE.formations&&rec?.alternativeFormation&&STATE.formations[rec.alternativeFormation]?pitchHTML(STATE.formations[rec.alternativeFormation],'#64748b','sm'):''}
+              <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px">Use if game state changes</div>
+            </div>
+            <div class="section-wrap">
+              <div class="sec-title">📋 Game Plan Summary</div>
+              ${infoRow('Formation', rec?.formation||'-', 'var(--blue)')}
+              ${infoRow('Attack Priority', (sum?.topAttackingPriority||'-').slice(0,40), 'var(--yellow)')}
+              ${infoRow('Defense Priority', (sum?.topDefensivePriority||'-').slice(0,40), 'var(--cyan)')}
+              ${infoRow('Key Weakness', (sum?.keyWeaknessToExploit||'-').replace(/_/g,' '), 'var(--red)')}
+              <div style="margin-top:12px">${confBar(sum?.overallConfidence||0.85,'Overall Confidence')}</div>
+            </div>
+          </div>
+          <div class="section-wrap">
+            <div class="sec-title">🤖 AI Strategy Summary</div>
+            <div style="background:var(--bg);padding:16px;border-radius:8px;border-left:3px solid var(--blue)"><p style="margin:0;font-size:13px;color:var(--text2);line-height:1.7">${esc(rec?.summary||'')}</p></div>
+          </div>
+          ${(r.agents?.strategyRecommendation?.keyPrinciples||[]).length?`<div class="section-wrap"><div class="sec-title">💡 Key Tactical Principles</div>${r.agents.strategyRecommendation.keyPrinciples.map((p,i)=>`<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)"><span style="color:var(--blue);font-weight:700">${i+1}.</span><span style="font-size:13px;color:var(--text2)">${esc(p)}</span></div>`).join('')}</div>`:''}
+        </div>
+
+        <div id="tab-content-attacking" style="display:none">
+          <div class="section-wrap">
+            <div class="sec-title">⚔️ Attacking Strategy</div>
+            <div class="flex gap2 mb4">${badge('Style: '+(rec?.attacking?.style||''),`var(--yellow)`)} ${badge('Build-up: '+((rec?.attacking?.buildUp||'').replace(/_/g,' ')),'var(--cyan)')}</div>
+            ${(rec?.attacking?.priorities||[]).map(p=>`<div style="padding:14px 16px;border-radius:8px;margin-bottom:10px;background:var(--bg);border-left:3px solid var(--yellow)"><div class="flex items-c gap2" style="margin-bottom:6px"><span style="background:var(--yellow);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${p.priority}</span><span style="font-weight:600">${esc(p.instruction)}</span></div><p style="margin:0;font-size:12px;color:var(--text3);padding-left:30px">${esc(p.detail||'')}</p></div>`).join('')}
+          </div>
+          <div class="section-wrap"><div class="sec-title">🎯 Set Pieces — Attack</div>
+            <div class="g2"><div><div style="font-weight:600;margin-bottom:8px">Corners</div><p style="font-size:13px;color:var(--text2)">${esc(rec?.setpieces?.attacking?.corners||'')}</p></div>
+            <div><div style="font-weight:600;margin-bottom:8px">Free Kicks</div><p style="font-size:13px;color:var(--text2)">${esc(rec?.setpieces?.attacking?.freekicks||'')}</p><div style="font-size:12px;color:var(--text3)">Taker: ${esc(rec?.setpieces?.attacking?.keyTaker||'')}</div></div></div>
+          </div>
+        </div>
+
+        <div id="tab-content-defending" style="display:none">
+          <div class="section-wrap">
+            <div class="sec-title">🏰 Defensive Setup</div>
+            <div class="flex gap2 mb4">${badge('Structure: '+((rec?.defending?.structure||'').replace(/_/g,' ')),'var(--cyan)')} ${badge('Line: '+(rec?.defending?.lineHeight||''),'var(--text3)')} ${badge('Press: '+(rec?.defending?.pressingIntensity||''),'var(--text3)')}</div>
+            ${(rec?.defending?.priorities||[]).map(p=>`<div style="padding:14px 16px;border-radius:8px;margin-bottom:10px;background:var(--bg);border-left:3px solid var(--cyan)"><div class="flex items-c gap2" style="margin-bottom:6px"><span style="background:var(--cyan);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${p.priority}</span><span style="font-weight:600">${esc(p.instruction)}</span></div><p style="margin:0;font-size:12px;color:var(--text3);padding-left:30px">${esc(p.detail||'')}</p></div>`).join('')}
+          </div>
+          <div class="section-wrap"><div class="sec-title">⚡ Pressing System</div>
+            <div class="mb4">${badge('Intensity: '+(rec?.pressing?.intensity||''),'var(--blue)')}</div>
+            <div style="margin-bottom:12px"><strong>Triggers:</strong> <div class="flex gap2 wrap mt4">${(rec?.pressing?.trigger||[]).map(t=>badge(t.replace(/_/g,' '),'var(--yellow)')).join('')}</div></div>
+            <p style="font-size:13px;color:var(--text2)">${esc(rec?.pressing?.description||'')}</p>
+          </div>
+          <div class="section-wrap"><div class="sec-title">🔄 Transition Plan</div>
+            <div class="g2"><div><div style="font-weight:600;margin-bottom:8px;color:var(--green)">Attack Transition</div><p style="font-size:13px;color:var(--text2)">${esc(rec?.transitions?.attacking||'')}</p></div>
+            <div><div style="font-weight:600;margin-bottom:8px;color:var(--red)">Defensive Transition</div><p style="font-size:13px;color:var(--text2)">${esc(rec?.transitions?.defending||'')}</p></div></div>
+            <div style="padding:12px;background:var(--bg);border-radius:8px;margin-top:12px;border-left:3px solid var(--blue);font-size:13px;color:var(--text2)"><strong>Focus: </strong>${esc(rec?.transitions?.focus||'')}</div>
+          </div>
+        </div>
+
+        <div id="tab-content-players" style="display:none">
+          <div class="section-wrap"><div class="sec-title">👤 Individual Player Instructions</div>
+            ${(rec?.playerInstructions||[]).map(pi=>`<div style="padding:12px 16px;border-radius:8px;margin-bottom:8px;background:var(--bg);border-left:3px solid ${pi.isKeyPlayer?'var(--green)':'var(--border2)'}"><div class="flex jc-b items-c" style="margin-bottom:6px"><div style="font-weight:600">${esc(pi.player)} ${badge(pi.position,'var(--text3)')}</div>${pi.isKeyPlayer?badge('Key Player','var(--green)'):''}</div><p style="margin:0;font-size:13px;color:var(--text2)">${esc(pi.instruction||'')}</p></div>`).join('')}
+          </div>
+        </div>
+
+        <div id="tab-content-alternatives" style="display:none">
+          <div class="section-wrap"><div class="sec-title">🔄 Situational Plans</div>
+            ${(r.agents?.strategyRecommendation?.alternativePlans||[]).map(plan=>`<div style="padding:16px;border-radius:8px;margin-bottom:12px;background:var(--bg);border:1px solid var(--border)"><div class="flex jc-b mb4" style="margin-bottom:8px"><div style="font-weight:600">${esc(plan.scenario)}</div>${badge(plan.formation,'var(--blue)')}</div><p style="margin:0;font-size:13px;color:var(--text2)">${esc(plan.description||'')}</p></div>`).join('')}
+          </div>
+          <div class="section-wrap"><div class="sec-title">⚡ In-Game Adjustments</div>
+            ${(r.agents?.strategyRecommendation?.inGameAdjustments||[]).map(adj=>`<div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px"><div style="color:var(--yellow);font-weight:600;min-width:200px">${esc(adj.trigger)}</div><div style="color:var(--text2)">${esc(adj.action)}</div></div>`).join('')}
+          </div>
+        </div>
+
+        <div id="tab-content-coaching" style="display:none">
+          <div class="section-wrap">
+            <div class="sec-title">📢 Pre-Match Briefing</div>
+            <div style="background:linear-gradient(135deg,rgba(59,130,246,.1),rgba(139,92,246,.1));border:1px solid rgba(59,130,246,.3);border-radius:12px;padding:20px;margin-bottom:16px"><p style="margin:0;font-size:15px;font-weight:500;color:var(--text);font-style:italic;line-height:1.7">"${esc(exp?.briefing?.openingStatement||'')}"</p></div>
+          </div>
+          <div class="section-wrap"><div class="sec-title">✅ Pre-Game Checklist</div>
+            ${(exp?.pregameChecklist||[]).map(item=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--text2)">${esc(item)}</div>`).join('')}
+          </div>
+          <div class="section-wrap"><div class="sec-title">⏱️ Half-Time Scenarios</div>
+            ${(exp?.halftimeAdjustments||[]).map(adj=>`<div style="padding:14px;border-radius:8px;margin-bottom:10px;background:var(--bg);border-left:3px solid var(--blue)"><div style="font-weight:600;margin-bottom:6px;color:var(--blue)">${esc(adj.scenario)}</div><p style="margin:0;font-size:13px;color:var(--text2)">${esc(adj.instruction)}</p></div>`).join('')}
+          </div>
+          <div class="section-wrap"><div class="sec-title">🤖 AI Explanation</div>
+            <div style="background:var(--bg);padding:16px;border-radius:8px;border-left:3px solid var(--blue)"><p style="margin:0;font-size:13px;color:var(--text2);line-height:1.7">${esc(exp?.explanation?.text||'')}</p></div>
+            <div style="margin-top:12px">${confBar(exp?.explanation?.confidence||0.85)}</div>
+          </div>
+        </div>`;
+
+      window.stratTab = function(tab) {
+        ['overview','attacking','defending','players','alternatives','coaching'].forEach(t => {
+          el(`tab-content-${t}`)?.style && (el(`tab-content-${t}`).style.display = t===tab?'block':'none');
+          const btn = el(`tab-${t}`);
+          if (btn) { btn.style.background=t===tab?'var(--blue)':''; btn.style.color=t===tab?'#fff':''; btn.style.borderColor=t===tab?'var(--blue)':'var(--border)'; }
+        });
+      };
+    } catch(e) {
+      el('strat-pipeline').innerHTML = '';
+      el('strat-content').innerHTML = `<div class="demo-banner">Error: ${esc(e.message)}</div>`;
+    }
+  };
+}
+
+// ─── PAGE: LIVE MATCH ─────────────────────────────────────────
+function renderLive() {
+  el('page-content').innerHTML = `
+    <div class="ph"><h1 style="font-size:22px;font-weight:800;margin:0">⚡ Live Match Advisor</h1><div style="color:var(--text3);font-size:13px;margin-top:2px">Real-time tactical guidance during the match</div></div>
+    <div class="pc">
+      <div style="display:grid;grid-template-columns:380px 1fr;gap:24px">
+        <div>
+          <div class="section-wrap">
+            <div class="sec-title">📋 Match Status Input</div>
+            <div class="demo-banner mb4">⚠️ Manual input mode</div>
+            <div style="margin-bottom:16px">
+              <div style="font-size:11px;color:var(--text3);text-transform:uppercase;margin-bottom:8px">Quick Scenarios</div>
+              <div class="g2">
+                ${[{l:'Winning 1-0 (75min)',s:'1-0',m:'75'},{l:'Losing 0-1 (60min)',s:'0-1',m:'60'},{l:'Draw (85min)',s:'1-1',m:'85'},{l:'Behind early (20min)',s:'0-1',m:'20'}].map(q=>`<button class="btn btn-s btn-sm" onclick="document.getElementById('live-score').value='${q.s}';document.getElementById('live-min').value='${q.m}'" style="font-size:11px">${q.l}</button>`).join('')}
+              </div>
+            </div>
+            <form onsubmit="getLiveAdvice(event)">
+              <div class="form-row" style="margin-bottom:12px"><label style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px">Score (Your Team — Opponent)</label><input id="live-score" value="0-0" placeholder="e.g. 1-2" required></div>
+              <div class="form-row" style="margin-bottom:12px"><label style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px">Match Minute</label><input id="live-min" type="number" value="45" min="1" max="120" required></div>
+              <div class="g2" style="margin-bottom:12px">
+                <div><label style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px">Our Formation</label><select id="live-form">${['4-3-3','4-2-3-1','3-5-2','4-4-2','5-3-2'].map(f=>`<option>${f}</option>`).join('')}</select></div>
+                <div><label style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px">Opp Formation</label><select id="live-opp-form">${['4-3-3','4-2-3-1','3-5-2','4-4-2','5-3-2'].map(f=>`<option ${f==='4-2-3-1'?'selected':''}>${f}</option>`).join('')}</select></div>
+              </div>
+              <div class="form-row" style="margin-bottom:12px"><label style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px">Possession %</label><input id="live-poss" type="number" value="50" min="0" max="100"></div>
+              <div class="form-row" style="margin-bottom:12px"><label style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px">Tactical Observation</label><textarea id="live-notes" rows="3" placeholder="e.g. Midfield being overrun, their left back pushing very high..."></textarea></div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><input type="checkbox" id="live-fatigue" style="width:auto"><label for="live-fatigue" style="font-size:13px;cursor:pointer">Players showing fatigue</label></div>
+              <button type="submit" class="btn btn-p w-full" id="live-btn">⚡ Get Live Tactical Advice</button>
+            </form>
+          </div>
+        </div>
+        <div>
+          <div id="live-result">
+            <div class="section-wrap"><div style="text-align:center;padding:64px 24px"><div style="font-size:64px;margin-bottom:16px">⚡</div><div style="font-weight:600;font-size:16px;margin-bottom:8px">Live Tactical Advisor Ready</div><div style="color:var(--text3);font-size:13px;max-width:400px;margin:0 auto">Enter the current match state and get immediate tactical suggestions tailored to the situation.</div></div></div>
+          </div>
+          <div id="live-history"></div>
+        </div>
+      </div>
+    </div>`;
+
+  const history = [];
+  window.getLiveAdvice = async function(e) {
+    e.preventDefault();
+    const btn = el('live-btn');
+    btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Getting Advice...';
+    const ctx = {
+      score: el('live-score').value,
+      minute: el('live-min').value,
+      teamFormation: el('live-form').value,
+      opponentFormation: el('live-opp-form').value,
+      possession: el('live-poss').value,
+      notes: el('live-notes').value,
+      fatigue: el('live-fatigue').checked
+    };
+    try {
+      const r = await apiPost('/live', ctx);
+      const urgColors = {high:'var(--red)',elevated:'var(--yellow)',normal:'var(--blue)',low:'var(--green)'};
+      const uc = urgColors[r.analysis?.urgency]||'var(--blue)';
+      const urgIcon = r.analysis?.urgency==='high'?'🚨':r.analysis?.urgency==='elevated'?'⚠️':r.analysis?.urgency==='low'?'✅':'📋';
+      el('live-result').innerHTML = `
+        <div class="section-wrap">
+          <div class="sec-title">⚡ Tactical Recommendations</div>
+          <div style="background:${uc}22;border:1px solid ${uc}44;border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+            <span style="font-size:20px">${urgIcon}</span>
+            <span style="font-weight:600;color:${uc};font-size:13px">Urgency: ${(r.analysis?.urgency||'normal').toUpperCase()}</span>
+          </div>
+          ${(r.analysis?.advice||[]).map((adv,i)=>`<div class="slide" style="display:flex;gap:12px;padding:14px 16px;border-radius:8px;margin-bottom:10px;background:var(--bg);border-left:3px solid ${uc}">
+            <span style="font-size:18px;min-width:24px">${i===0?'🎯':i===1?'♟️':'💡'}</span>
+            <div style="font-weight:500;font-size:14px;line-height:1.5">${esc(adv)}</div>
+          </div>`).join('')}
+          <div style="margin-top:16px">${confBar(r.analysis?.confidence||0.87,'AI Confidence')}</div>
+        </div>
+        <div class="section-wrap">
+          <div class="sec-title">📊 Match State</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+            ${[{l:'Score',v:ctx.score},{l:'Minute',v:ctx.minute+"'"},{l:'Possession',v:ctx.possession+'%'},{l:'Our Formation',v:ctx.teamFormation},{l:'Opp Formation',v:ctx.opponentFormation},{l:'Urgency',v:(r.analysis?.urgency||'normal').toUpperCase()}].map(s=>`<div class="stat-box"><div class="stat-v" style="font-size:18px">${esc(s.v)}</div><div class="stat-l">${esc(s.l)}</div></div>`).join('')}
+          </div>
+        </div>`;
+      
+      history.unshift({ctx, advice: r.analysis?.advice?.[0]||'', ts: new Date().toLocaleTimeString()});
+      el('live-history').innerHTML = history.length?`<div class="section-wrap"><div class="sec-title">📜 Advice History</div>${history.slice(0,4).map(h=>`<div style="padding:10px 12px;border-radius:8px;margin-bottom:6px;background:var(--bg);font-size:12px"><div class="flex jc-b" style="margin-bottom:4px"><span style="font-weight:600">${esc(h.ctx.score)} at ${esc(h.ctx.minute)}'</span><span style="color:var(--text3)">${h.ts}</span></div><div style="color:var(--text3)">${esc(h.advice.slice(0,100))}...</div></div>`).join('')}</div>`:'';
+    } catch(err) { el('live-result').innerHTML = `<div class="demo-banner">Error: ${esc(err.message)}</div>`; }
+    btn.disabled = false; btn.innerHTML = '⚡ Get Live Tactical Advice';
+  };
+}
+
+// ─── PAGE: CHAT ───────────────────────────────────────────────
+function renderChat() {
+  const opponents = STATE.teams.filter(t=>t.id!==STATE.selectedTeam);
+  if (!STATE.selectedOpponent) STATE.selectedOpponent = opponents[0]?.id||'';
+  
+  el('page-content').innerHTML = `
+    <div class="ph">
+      <div class="flex jc-b items-c">
+        <div><h1 style="font-size:22px;font-weight:800;margin:0">🤖 AI Tactical Advisor</h1><div style="color:var(--text3);font-size:13px;margin-top:2px">Multi-agent RAG-powered assistant</div></div>
+        <div class="flex gap2 items-c">
+          <span style="font-size:12px;color:var(--text3)">Analyzing vs:</span>
+          <select id="chat-opp" style="width:auto">${opponents.map(t=>`<option value="${t.id}" ${t.id===STATE.selectedOpponent?'selected':''}>${esc(t.name)}</option>`).join('')}</select>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;height:calc(100vh - 70px)">
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <div id="chat-messages" style="flex:1;overflow-y:auto;padding:24px 32px">
+          <div class="chat-msg"><div class="avatar" style="margin-right:12px;background:linear-gradient(135deg,#3b82f6,#8b5cf6)">🤖</div><div class="msg-bubble msg-ai"><div style="font-size:14px;line-height:1.6">Hello coach! I'm your AI Tactical Advisor powered by IBM Granite. I have access to historical match data, formation analysis, and opponent scouting.\n\nAsk me anything about tactics, strategy, or player performance.</div><div style="font-size:10px;color:var(--text3);margin-top:6px">${new Date().toLocaleTimeString()}</div></div></div>
+        </div>
+        <div id="chat-input-area">
+          <div class="flex gap2">
+            <textarea id="chat-input" rows="2" placeholder="Ask a tactical question... (Enter to send)" style="flex:1;resize:none;padding:12px 16px;font-size:14px;line-height:1.5" onkeydown="chatKeyDown(event)"></textarea>
+            <button onclick="sendChat()" class="btn btn-p" id="chat-send" style="align-self:flex-end;padding:12px 20px">→ Send</button>
+          </div>
+        </div>
+      </div>
+      <div style="width:260px;border-left:1px solid var(--border);background:var(--bg2);padding:20px;overflow-y:auto;flex-shrink:0">
+        <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">💡 Suggested Questions</div>
+        ${['How should we play against this opponent?','Why should we use this formation?','What are their biggest weaknesses?','How do we change tactics if losing?','Which players are underperforming?','What defensive setup for second half?','How to press against their build-up?','Best set piece strategy against them?'].map(q=>`<button class="suggest-btn" onclick="sendChat('${q.replace(/'/g,"\\'")}')">${q}</button>`).join('')}
+        <div style="margin-top:20px;padding:12px;background:var(--bg);border-radius:8px;font-size:11px;color:var(--text3)">
+          <div style="font-weight:600;margin-bottom:4px">How it works</div>
+          <div>1. RAG retrieves match data</div><div>2. Match Analysis Agent</div><div>3. Opponent Scout Agent</div><div>4. Strategy + Explanation</div>
+        </div>
+      </div>
+    </div>`;
+
+  window.chatKeyDown = function(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();} };
+  
+  window.sendChat = async function(preQ) {
+    const q = preQ||el('chat-input')?.value?.trim();
+    if (!q) return;
+    if (!preQ && el('chat-input')) el('chat-input').value = '';
+    el('chat-send').disabled = true;
+    
+    const msgs = el('chat-messages');
+    msgs.insertAdjacentHTML('beforeend', `<div class="chat-msg" style="justify-content:flex-end;margin-bottom:16px"><div class="msg-bubble msg-user" style="max-width:70%"><div style="font-size:14px;line-height:1.6">${esc(q)}</div><div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:6px">${new Date().toLocaleTimeString()}</div></div><div class="avatar" style="margin-left:12px;background:var(--bg3)">👤</div></div>`);
+    
+    // Typing indicator
+    msgs.insertAdjacentHTML('beforeend', `<div id="typing-ind" class="chat-msg"><div class="avatar" style="margin-right:12px;background:linear-gradient(135deg,#3b82f6,#8b5cf6)">🤖</div><div class="msg-bubble msg-ai"><div class="flex gap2">${[0,1,2].map(i=>`<div class="pulse" style="width:8px;height:8px;border-radius:50%;background:var(--blue);animation-delay:${i*.2}s"></div>`).join('')}</div></div></div>`);
+    msgs.scrollTop = msgs.scrollHeight;
+    
+    const oppId = el('chat-opp')?.value||STATE.selectedOpponent;
+    try {
+      const r = await apiPost('/chat', {question:q,teamId:STATE.selectedTeam,opponentId:oppId});
+      el('typing-ind')?.remove();
+      msgs.insertAdjacentHTML('beforeend', `<div class="chat-msg slide" style="margin-bottom:16px"><div class="avatar" style="margin-right:12px;background:linear-gradient(135deg,#3b82f6,#8b5cf6)">🤖</div><div class="msg-bubble msg-ai" style="max-width:70%"><div style="font-size:14px;line-height:1.6;white-space:pre-wrap">${esc(r.response?.text||'Unable to generate response.')}</div>${r.response?.confidence?`<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">${confBar(r.response.confidence,'Response Confidence')}<div style="font-size:10px;color:var(--text3);margin-top:6px">Source: ${esc(r.response?.dataSource||'')} · RAG: ${r.ragDocuments||0} docs</div>${r.agentPipeline?`<div style="font-size:10px;color:var(--text3);margin-top:4px">Pipeline: ${r.agentPipeline.join(' → ')}</div>`:''}</div>`:''}<div style="font-size:10px;color:var(--text3);margin-top:6px">${new Date().toLocaleTimeString()}</div></div></div>`);
+    } catch(e) {
+      el('typing-ind')?.remove();
+      msgs.insertAdjacentHTML('beforeend', `<div class="chat-msg" style="margin-bottom:16px"><div class="avatar" style="margin-right:12px;background:linear-gradient(135deg,#3b82f6,#8b5cf6)">🤖</div><div class="msg-bubble msg-ai"><div style="font-size:14px;color:var(--red)">Unable to connect to backend. Ensure the server is running.</div></div></div>`);
+    }
+    el('chat-send').disabled = false;
+    msgs.scrollTop = msgs.scrollHeight;
+  };
+}
+
+// ─── PAGE: DATA ───────────────────────────────────────────────
+function renderData() {
+  el('page-content').innerHTML = `
+    <div class="ph"><h1 style="font-size:22px;font-weight:800;margin:0">Data Manager</h1><div style="color:var(--text3);font-size:13px;margin-top:2px">Upload custom match data or use built-in demo data</div></div>
+    <div class="pc">
+      <div class="section-wrap">
+        <div class="sec-title">📊 Current Data Source</div>
+        <div class="demo-banner mb4">⚠️ All data is SIMULATED/SAMPLE data for demonstration purposes only</div>
+        <div class="stat-grid">
+          ${[{l:'Teams',v:STATE.teams.length,i:'🏆'},{l:'Matches',v:'10+',i:'⚽'},{l:'Players',v:'33+',i:'👤'},{l:'Formations',v:'5',i:'📐'}].map(s=>`<div class="stat-box"><div style="font-size:24px;margin-bottom:4px">${s.i}</div><div class="stat-v" style="font-size:24px">${s.v}</div><div class="stat-l">${s.l}</div></div>`).join('')}
+        </div>
+      </div>
+      <div class="g2">
+        <div class="section-wrap">
+          <div class="sec-title">📤 Upload Custom Data</div>
+          <div id="drop-zone" onclick="document.getElementById('file-input').click()" style="border:2px dashed var(--border);border-radius:12px;padding:40px 24px;text-align:center;cursor:pointer;background:var(--bg);transition:border .2s" onmouseenter="this.style.borderColor='var(--blue)'" onmouseleave="this.style.borderColor='var(--border)'">
+            <div style="font-size:48px;margin-bottom:12px">📂</div>
+            <div style="font-weight:600;margin-bottom:4px">Click to upload CSV or JSON</div>
+            <div style="font-size:12px;color:var(--text3)">Max 10MB · CSV, JSON</div>
+          </div>
+          <input type="file" id="file-input" accept=".csv,.json" style="display:none" onchange="handleFileUpload(this)">
+          <div id="upload-result" style="margin-top:16px"></div>
+        </div>
+        <div class="section-wrap">
+          <div class="sec-title">📋 CSV Template</div>
+          <p style="font-size:13px;color:var(--text3);margin-bottom:16px">Download the template to format your match data for upload. Fill in historical match stats to analyze your own team.</p>
+          <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:16px;overflow-x:auto">
+            <code style="font-size:11px;color:var(--text2);font-family:monospace;word-break:break-all">date,homeTeam,awayTeam,homeScore,awayScore,homeFormation,awayFormation,homePossession...</code>
+          </div>
+          <button class="btn btn-s w-full" onclick="downloadTemplate()">📥 Download CSV Template</button>
+        </div>
+      </div>
+      <div class="section-wrap">
+        <div class="sec-title">🔍 RAG System Status</div>
+        <div class="ai-banner mb4">🔍 RAG uses TF-IDF local retrieval. Upgrade path: IBM Watson Discovery or vector DB (Chroma, Pinecone).</div>
+        <div class="g2" style="font-size:13px">
+          <div><div style="font-weight:600;margin-bottom:8px">Indexed Content</div><div style="color:var(--text3);line-height:2">✓ All match data<br>✓ Tactical patterns<br>✓ Player statistics<br>✓ Formation records<br>✓ User uploads</div></div>
+          <div><div style="font-weight:600;margin-bottom:8px">Production Upgrade</div><div style="color:var(--text3);line-height:2">→ IBM Watson Discovery<br>→ Vector DB (Chroma/Pinecone)<br>→ IBM Granite embeddings<br>→ IBM Cloud Object Storage<br>→ Real-time sports APIs</div></div>
+        </div>
+      </div>
+    </div>`;
+
+  window.handleFileUpload = async function(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('file', file);
+    el('upload-result').innerHTML = '<div class="ai-banner">⏳ Processing...</div>';
+    try {
+      const r = await fetch(`${API}/upload`, {method:'POST',body:fd}).then(r=>r.json());
+      el('upload-result').innerHTML = r.success
+        ? `<div style="padding:12px 16px;border-radius:8px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3)"><div style="color:var(--green);font-weight:600;margin-bottom:4px">✓ Success</div><div style="font-size:12px;color:var(--text2)">${esc(r.message)}</div></div>`
+        : `<div style="padding:12px 16px;border-radius:8px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3)"><div style="color:var(--red);font-weight:600;margin-bottom:4px">✕ Failed</div><div style="font-size:12px;color:var(--text2)">${esc(r.error||'')}</div></div>`;
+    } catch(e) { el('upload-result').innerHTML = `<div class="demo-banner">Error: ${esc(e.message)}</div>`; }
+  };
+
+  window.downloadTemplate = async function() {
+    const r = await fetch(`${API}/upload/template`);
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href=url; a.download='match_data_template.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
+}
+
+// ─── NAVIGATION & INIT ────────────────────────────────────────
+const PAGES = {dashboard:renderDashboard, analysis:renderAnalysis, opponent:renderOpponent, strategy:renderStrategy, live:renderLive, chat:renderChat, data:renderData};
+
+async function showPage(page) {
+  STATE.currentPage = page;
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  el('nav-'+page)?.classList.add('active');
+  el('page-content').innerHTML = `<div style="text-align:center;padding:64px"><span class="spin" style="width:40px;height:40px;border-width:3px"></span></div>`;
+  try { await PAGES[page]?.(); }
+  catch(e) { el('page-content').innerHTML = `<div class="pc"><div class="demo-banner">Page error: ${esc(e.message)}<br><small>Ensure the backend is running at http://localhost:3001</small></div></div>`; }
+}
+
+async function onTeamChange(val) {
+  STATE.selectedTeam = val;
+  await showPage(STATE.currentPage);
+}
+
+async function init() {
+  try {
+    const [statusData, teamsData, formData] = await Promise.all([
+      apiFetch('/status'),
+      apiFetch('/teams'),
+      apiFetch('/formations')
+    ]);
+    
+    STATE.status = statusData;
+    STATE.teams = teamsData.teams || [];
+    STATE.formations = formData.formations || {};
+    
+    if (STATE.teams.length) {
+      STATE.selectedTeam = STATE.teams[0].id;
+      STATE.selectedOpponent = STATE.teams[1]?.id || '';
+      el('team-select').innerHTML = STATE.teams.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+    }
+    
+    const gc = statusData.graniteConnected;
+    el('ai-status').innerHTML = `
+      <div class="flex items-c gap2">
+        <span style="width:6px;height:6px;border-radius:50%;background:${gc?'var(--green)':'var(--yellow)'};display:inline-block"></span>
+        <span style="color:${gc?'var(--green)':'var(--yellow)'};font-weight:600">${gc?'IBM Granite Active':'AI Engine Active'}</span>
+      </div>
+      <div style="color:var(--text3);margin-top:2px;font-size:10px">${esc(statusData.aiBackend||'')}</div>`;
+    el('ai-status').style.background = gc?'rgba(34,197,94,.1)':'rgba(245,158,11,.1)';
+    el('ai-status').style.border = `1px solid ${gc?'rgba(34,197,94,.3)':'rgba(245,158,11,.3)'}`;
+    
+    el('offline-banner').style.display = 'none';
+    await showPage('dashboard');
+  } catch(e) {
+    el('offline-banner').style.display = 'block';
+    el('page-content').innerHTML = `
+      <div class="pc">
+        <div style="text-align:center;padding:64px">
+          <div style="font-size:64px;margin-bottom:16px">⚠️</div>
+          <div style="font-weight:700;font-size:20px;margin-bottom:12px">Backend Not Connected</div>
+          <div style="color:var(--text3);font-size:14px;margin-bottom:24px">Start the backend server to use TacticAI</div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 24px;display:inline-block;text-align:left;font-family:monospace;font-size:13px">
+            <div style="color:var(--text3);margin-bottom:8px"># Start the backend:</div>
+            <div style="color:var(--green)">cd game-strategy-advisor/backend</div>
+            <div style="color:var(--green)">pip3 install flask flask-cors requests</div>
+            <div style="color:var(--green)">python3 server.py</div>
+          </div>
+          <div style="margin-top:24px"><button class="btn btn-p" onclick="location.reload()">🔄 Retry Connection</button></div>
+        </div>
+      </div>`;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
